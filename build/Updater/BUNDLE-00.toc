@@ -1,0 +1,3 @@
+([('Updater',
+   '/Users/danielhamann/Documents/GitHub/ct_band_updater/dist/Updater',
+   'EXECUTABLE')],)
