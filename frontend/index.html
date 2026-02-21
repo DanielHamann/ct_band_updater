@@ -11,9 +11,9 @@
   <!-- Tab bar -->
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="musikteam">Musikteam</button>
-    <button class="tab-btn" data-tab="einsaetze">Einsaetze</button>
+    <button class="tab-btn" data-tab="einsaetze">Einsätze</button>
     <button class="tab-btn" data-tab="teamleiter">Fakten</button>
-    <button class="tab-btn" data-tab="run">Ausfuehren</button>
+    <button class="tab-btn" data-tab="run">Ausführen</button>
     <span class="tab-spacer"></span>
     <button class="tab-btn gear-btn" data-tab="settings" id="gear-btn" title="Einstellungen">&#9881;</button>
   </nav>
@@ -31,6 +31,11 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <label>ChurchTools-URL</label>
+        <input id="ct-url" type="text" placeholder="https://XXX.church.tools" autocapitalize="none" autocorrect="off" spellcheck="false" />
+      </div>
+
       <div class="info-box">
         <strong>Wie erhalte ich meinen Login-Token?</strong>
         <ol id="instructions-list">
@@ -40,11 +45,6 @@
           <li>Klicke auf <strong>Login Token anzeigen</strong>.</li>
           <li>Kopiere den gesamten Token in das Feld unten.</li>
         </ol>
-      </div>
-
-      <div class="form-row">
-        <label>ChurchTools-URL</label>
-        <input id="ct-url" type="text" placeholder="https://XXX.church.tools" autocapitalize="none" autocorrect="off" spellcheck="false" />
       </div>
 
       <div class="form-row">
@@ -59,7 +59,7 @@
         <label></label>
         <label class="checkbox-label">
           <input id="store-key-cb" type="checkbox" checked />
-          Login-Token verschluesselt auf diesem Geraet speichern
+          Login-Token verschlüsselt auf diesem Gerät speichern
         </label>
       </div>
 
@@ -67,14 +67,14 @@
         <strong>Wichtiger Datenschutzhinweis</strong><br><br>
         Mit deinem Login-Token hat man Zugriff auf dein Benutzerkonto mitsamt allen ChurchTools-Daten
         und Berechtigungen. Gib deinen Login-Token daher <strong>NIEMALS</strong> an Dritte weiter.<br><br>
-        Sind deine Berechtigungen zu weitreichend, kann das eine Datenschutzluecke darstellen.
-        Bitte pruefe daher, ob fuer deinen Anwendungsfall alle deine Berechtigungen benoetigt werden.
-        Verwende im Zweifel den Login-Token einer neu erstellten Person, die ausschliesslich die
-        benoetigen Berechtigungen hat.<br><br>
-        Du kannst den aktuellen Login-Token jederzeit ueber "Login-Token erneuern" ungueltig machen.
+        Sind deine Berechtigungen zu weitreichend, kann das eine Datenschutzlücke darstellen.
+        Bitte prüfe daher, ob für deinen Anwendungsfall alle deine Berechtigungen benötigt werden.
+        Verwende im Zweifel den Login-Token einer neu erstellten Person, die ausschließlich die
+        benötigten Berechtigungen hat.<br><br>
+        Du kannst den aktuellen Login-Token jederzeit über „Login-Token erneuern" ungültig machen.
         Danach verlieren alle Anwendungen, die den Login-Token nutzen, den Zugriff auf deine
-        ChurchTools-Daten. Der Login-Token wird in dieser Anwendung ausschliesslich lokal und
-        verschluesselt gespeichert.
+        ChurchTools-Daten. Der Login-Token wird in dieser Anwendung ausschließlich lokal und
+        verschlüsselt gespeichert.
       </div>
 
       <button class="primary-btn" onclick="saveSettings()">Speichern</button>
@@ -101,16 +101,16 @@
           <div class="step-num">2</div>
           <div class="step-body">
             <strong>Teams definieren</strong>
-            <span>Fuege deine Musikteams hinzu (z.B. A1, B1).</span>
+            <span>Füge deine Musikteams hinzu (z.B. A1, B1).</span>
           </div>
-          <button class="primary-btn" onclick="addTeam()">Hinzufuegen</button>
+          <button class="primary-btn" onclick="addTeam()">Hinzufügen</button>
           <span class="step-done-mark">&#10003;</span>
         </div>
         <div class="setup-step" id="setup-step-persons">
           <div class="step-num">3</div>
           <div class="step-body">
             <strong>Personen laden</strong>
-            <span>Lade die Mitglieder fuer die Dienst-Zuordnung.</span>
+            <span>Lade die Mitglieder für die Dienst-Zuordnung.</span>
           </div>
           <button class="primary-btn" onclick="fetchPersons()" id="fetch-btn">Laden</button>
           <span class="step-done-mark">&#10003;</span>
@@ -119,9 +119,9 @@
 
       <!-- Management toolbar — shown after setup is complete -->
       <div class="toolbar hidden" id="musikteam-toolbar">
-        <button onclick="addTeam()">Team hinzufuegen</button>
+        <button onclick="addTeam()">Team hinzufügen</button>
         <button onclick="removeTeam()">Team entfernen</button>
-        <button onclick="loadDiensteFromCT()">Dienste hinzufuegen</button>
+        <button onclick="loadDiensteFromCT()">Dienste hinzufügen</button>
         <span class="spacer"></span>
         <button onclick="fetchPersons()">Personen aktualisieren</button>
         <span id="persons-status" class="status-msg"></span>
@@ -136,7 +136,7 @@
     </div>
   </div>
 
-  <!-- ── EINSAETZE ── -->
+  <!-- ── EINSÄTZE ── -->
   <div id="tab-einsaetze" class="tab-panel hidden">
     <div class="panel">
 
@@ -152,13 +152,13 @@
         </div>
         <div id="event-list" class="event-list hidden"></div>
         <div id="add-events-row" class="hidden">
-          <button class="primary-btn" onclick="addSelectedEvents()">Ausgewaehlte hinzufuegen</button>
+          <button class="primary-btn" onclick="addSelectedEvents()">Ausgewählte hinzufügen</button>
         </div>
       </div>
 
       <!-- Saved einsaetze -->
       <div class="toolbar">
-        <button onclick="addManualEinsatz()">Manuell hinzufuegen</button>
+        <button onclick="addManualEinsatz()">Manuell hinzufügen</button>
       </div>
       <div class="table-wrap">
         <table id="einsaetze-table">
@@ -177,7 +177,7 @@
     </div>
   </div>
 
-  <!-- ── TEAMLEITER ── -->
+  <!-- ── FAKTEN ── -->
   <div id="tab-teamleiter" class="tab-panel hidden">
     <div class="panel">
       <div class="toolbar">
@@ -195,10 +195,10 @@
     </div>
   </div>
 
-  <!-- ── RUN ── -->
+  <!-- ── AUSFÜHREN ── -->
   <div id="tab-run" class="tab-panel hidden">
     <div class="panel">
-      <button class="primary-btn run-btn" id="run-btn" onclick="runUpdate()">Jetzt ausfuehren</button>
+      <button class="primary-btn run-btn" id="run-btn" onclick="runUpdate()">Jetzt ausführen</button>
       <pre id="run-log" class="log-view"></pre>
     </div>
   </div>
@@ -206,11 +206,11 @@
   <!-- ── PERSON PICKER MODAL ── -->
   <div id="person-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <h3>Person auswaehlen</h3>
+      <h3>Person auswählen</h3>
       <input id="person-search" type="text" placeholder="Name eingeben..." oninput="filterPersons(this.value)" />
       <ul id="person-list"></ul>
       <div class="modal-actions">
-        <button onclick="clearPersonSelection()">Loeschen</button>
+        <button onclick="clearPersonSelection()">Löschen</button>
         <button class="primary-btn" onclick="confirmPersonSelection()">OK</button>
         <button onclick="closePersonModal()">Abbrechen</button>
       </div>
@@ -221,10 +221,10 @@
   <div id="sg-modal" class="modal-overlay hidden">
     <div class="modal-box modal-box--wide">
       <h3>Dienste aus ChurchTools laden</h3>
-      <p class="modal-desc">Waehle die Dienstgruppen aus, deren Dienste hinzugefuegt werden sollen:</p>
+      <p class="modal-desc">Wähle die Dienstgruppen aus, deren Dienste hinzugefügt werden sollen:</p>
       <div id="sg-list" class="sg-list"></div>
       <div class="modal-actions">
-        <button class="primary-btn" onclick="confirmServiceGroups()">Hinzufuegen</button>
+        <button class="primary-btn" onclick="confirmServiceGroups()">Hinzufügen</button>
         <button onclick="closeSGModal()">Abbrechen</button>
       </div>
     </div>
@@ -233,14 +233,14 @@
   <!-- ── ADD TEAM MODAL ── -->
   <div id="add-team-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <h3>Teams hinzufuegen</h3>
+      <h3>Teams hinzufügen</h3>
       <div class="form-row">
         <label>Anzahl</label>
         <input id="add-team-count" type="number" min="1" max="20" value="1" oninput="updateAddTeamInputs()" style="width:80px;padding:7px 10px;border:1px solid #d2d2d7;border-radius:6px;font-size:14px;" />
       </div>
       <div id="add-team-names" class="add-team-names"></div>
       <div class="modal-actions">
-        <button class="primary-btn" onclick="confirmAddTeams()">Hinzufuegen</button>
+        <button class="primary-btn" onclick="confirmAddTeams()">Hinzufügen</button>
         <button onclick="closeAddTeamModal()">Abbrechen</button>
       </div>
     </div>
@@ -252,7 +252,7 @@
       <h3>Team entfernen</h3>
       <ul id="remove-team-list" class="remove-team-list"></ul>
       <div class="modal-actions">
-        <button onclick="closeRemoveTeamModal()">Schliessen</button>
+        <button onclick="closeRemoveTeamModal()">Schließen</button>
       </div>
     </div>
   </div>

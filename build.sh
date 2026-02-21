@@ -52,6 +52,15 @@ hdiutil create \
 
 rm -rf "$STAGING"
 
+# Flush macOS icon cache so the new icon appears immediately
+touch "release/CT Musikteam.app"
+# Re-register with LaunchServices (no sudo needed)
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister \
+  -f "release/CT Musikteam.app" 2>/dev/null || true
+# Clear per-user icon cache and restart Dock
+rm -f ~/Library/Caches/com.apple.iconservices.store 2>/dev/null || true
+killall Dock 2>/dev/null || true
+
 echo ""
 echo "Fertig."
 echo "  App: release/CT Musikteam.app"

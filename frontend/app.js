@@ -128,7 +128,9 @@ async function saveSettings() {
   const storeKey = document.getElementById('store-key-cb').checked;
   try {
     await window.go.main.App.SaveSettings(ctURL, apiKey, storeKey);
-    showStatus('settings-status', 'Gespeichert.');
+    updateUrlPrompt(ctURL);
+    // Switch back to Musikteam after saving
+    document.querySelector('.tab-btn[data-tab="musikteam"]').click();
   } catch (e) {
     showStatus('settings-status', 'Fehler: ' + e, true);
   }
@@ -224,7 +226,7 @@ function makeTeamCell(personId, team, row) {
 
   div.addEventListener('click', () => {
     if (state.persons.length === 0) {
-      alert('Bitte zuerst Personen aus ChurchTools laden (Button "Personen laden").');
+      alert('Bitte zuerst Personen aus ChurchTools laden (Button „Personen laden").');
       return;
     }
     openPersonModal(personId, async selectedId => {
@@ -521,7 +523,7 @@ async function confirmServiceGroups() {
   });
 
   closeSGModal();
-  if (added === 0) { alert('Keine Dienste ausgewaehlt.'); return; }
+  if (added === 0) { alert('Keine Dienste ausgewählt.'); return; }
   await saveMusikteam();
   updateSetupGuide();
   renderMusikteamTable();
@@ -630,7 +632,7 @@ async function renderEinsaetze() {
 async function loadEventsForPicker() {
   const from = document.getElementById('event-from').value;
   const to = document.getElementById('event-to').value;
-  if (!from || !to) { alert('Bitte Von- und Bis-Datum auswaehlen.'); return; }
+  if (!from || !to) { alert('Bitte Von- und Bis-Datum auswählen.'); return; }
 
   const btn = document.getElementById('load-events-btn');
   btn.disabled = true;
@@ -652,16 +654,23 @@ function renderEventList(events) {
   list.innerHTML = '';
 
   if (!events || events.length === 0) {
-    list.textContent = 'Keine Events im gewaehlten Zeitraum gefunden.';
+    list.textContent = 'Keine Events im gewählten Zeitraum gefunden.';
     list.classList.remove('hidden');
     addRow.classList.add('hidden');
     return;
   }
 
   events.forEach(ev => {
-    const isoDate = ev.startDate ? ev.startDate.substring(0, 10) : '';
-    const displayDate = isoDate ? isoDate.split('-').reverse().join('.') : '';
-    const zeit = ev.startDate && ev.startDate.length >= 16 ? ev.startDate.substring(11, 16) : '';
+    let isoDate = '', displayDate = '', zeit = '';
+    if (ev.startDate) {
+      const dt = new Date(ev.startDate);
+      const y = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      isoDate = `${y}-${mo}-${d}`;
+      displayDate = `${d}.${mo}.${y}`;
+      zeit = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    }
 
     const row = document.createElement('div');
     row.className = 'event-row';
@@ -725,10 +734,10 @@ async function addSelectedEvents() {
   });
 
   if (missing.length > 0) {
-    alert('Bitte Team auswaehlen fuer:\n' + missing.join('\n'));
+    alert('Bitte Team auswählen für:\n' + missing.join('\n'));
     return;
   }
-  if (toAdd.length === 0) { alert('Keine Events ausgewaehlt.'); return; }
+  if (toAdd.length === 0) { alert('Keine Events ausgewählt.'); return; }
 
   toAdd.forEach(e => state.einsaetze.push(e));
   await saveEinsaetze();
@@ -830,7 +839,7 @@ function renderTeamleiterTable() {
         const valSel = document.createElement('select');
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = '– Option waehlen –';
+        placeholder.textContent = '– Option wählen –';
         valSel.appendChild(placeholder);
         selectedFact.options.forEach(o => {
           const opt = document.createElement('option');
@@ -886,7 +895,7 @@ async function runUpdate() {
   const btn = document.getElementById('run-btn');
   const log = document.getElementById('run-log');
   btn.disabled = true;
-  log.textContent = 'Starte Ausfuehrung...\n';
+  log.textContent = 'Starte Ausführung...\n';
   try {
     await window.go.main.App.RunUpdate();
   } catch (e) {
