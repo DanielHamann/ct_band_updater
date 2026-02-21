@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CT Musikteam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="settings">Einstellungen</button>
+    <button class="tab-btn" data-tab="musikteam">Musikteam</button>
+    <button class="tab-btn" data-tab="einsaetze">Einsaetze</button>
+    <button class="tab-btn" data-tab="teamleiter">Teamleiter</button>
+    <button class="tab-btn" data-tab="run">Ausfuehren</button>
+  </nav>
+
+  <!-- ── SETTINGS ── -->
+  <div id="tab-settings" class="tab-panel active">
+    <div class="panel">
+      <div class="info-box">
+        <strong>Wie erhalte ich meinen Login-Token?</strong>
+        <ol id="instructions-list">
+          <li>Gehe auf <a id="ct-link" href="#" target="_blank"></a> und melde dich an.</li>
+          <li>Gehe oben rechts auf dein Profil &rarr; <strong>Mein Profil</strong>.</li>
+          <li>Scrolle runter bis zum Bereich <strong>Login-Token</strong>.</li>
+          <li>Klicke auf <strong>Login Token anzeigen</strong>.</li>
+          <li>Kopiere den gesamten Token in das Feld unten.</li>
+        </ol>
+      </div>
+
+      <div class="form-row">
+        <label>ChurchTools-URL</label>
+        <input id="ct-url" type="text" placeholder="https://XXX.church.tools" autocapitalize="none" autocorrect="off" spellcheck="false" />
+      </div>
+
+      <div class="form-row">
+        <label>Login-Token</label>
+        <div class="input-group">
+          <input id="api-key" type="password" placeholder="Login-Token eingeben..." />
+          <button id="toggle-key-btn" onclick="toggleKeyVisibility()">Anzeigen</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label></label>
+        <label class="checkbox-label">
+          <input id="store-key-cb" type="checkbox" checked />
+          Login-Token verschluesselt auf diesem Geraet speichern
+        </label>
+      </div>
+
+      <div id="privacy-warning" class="warning-box hidden">
+        <strong>Wichtiger Datenschutzhinweis</strong><br><br>
+        Mit deinem Login-Token hat man Zugriff auf dein Benutzerkonto mitsamt allen ChurchTools-Daten
+        und Berechtigungen. Gib deinen Login-Token daher <strong>NIEMALS</strong> an Dritte weiter.<br><br>
+        Sind deine Berechtigungen zu weitreichend, kann das eine Datenschutzluecke darstellen.
+        Bitte pruefe daher, ob fuer deinen Anwendungsfall alle deine Berechtigungen benoetigt werden.
+        Verwende im Zweifel den Login-Token einer neu erstellten Person, die ausschliesslich die
+        benoetigen Berechtigungen hat.<br><br>
+        Du kannst den aktuellen Login-Token jederzeit ueber "Login-Token erneuern" ungueltig machen.
+        Danach verlieren alle Anwendungen, die den Login-Token nutzen, den Zugriff auf deine
+        ChurchTools-Daten. Der Login-Token wird in dieser Anwendung ausschliesslich lokal und
+        verschluesselt gespeichert.
+      </div>
+
+      <button class="primary-btn" onclick="saveSettings()">Speichern</button>
+      <span id="settings-status" class="status-msg"></span>
+    </div>
+  </div>
+
+  <!-- ── MUSIKTEAM ── -->
+  <div id="tab-musikteam" class="tab-panel hidden">
+    <div class="panel">
+
+      <!-- Personen banner — shown when no persons loaded -->
+      <div id="persons-banner" class="notice-box hidden">
+        <strong>Personen noch nicht geladen</strong><br>
+        Bevor du Personen zuordnen kannst, musst du sie einmalig aus ChurchTools laden.
+        Klicke auf <strong>"Personen laden"</strong> in der Toolbar unten.
+      </div>
+
+      <div class="toolbar">
+        <button onclick="addTeam()">Team hinzufuegen</button>
+        <button onclick="removeTeam()">Team entfernen</button>
+        <button class="primary-btn" onclick="loadDiensteFromCT()" id="load-dienste-btn">Dienste aus CT laden</button>
+        <span class="spacer"></span>
+        <button class="primary-btn" onclick="fetchPersons()" id="fetch-btn">Personen laden</button>
+        <span id="persons-status" class="status-msg"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table id="musikteam-table">
+          <thead><tr id="musikteam-header"></tr></thead>
+          <tbody id="musikteam-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EINSAETZE ── -->
+  <div id="tab-einsaetze" class="tab-panel hidden">
+    <div class="panel">
+
+      <!-- Event picker from CT -->
+      <div class="event-picker-box">
+        <strong>Events aus ChurchTools laden</strong>
+        <div class="event-picker-controls">
+          <label>Von</label>
+          <input id="event-from" type="date" />
+          <label>Bis</label>
+          <input id="event-to" type="date" />
+          <button class="primary-btn" id="load-events-btn" onclick="loadEventsForPicker()">Laden</button>
+        </div>
+        <div id="event-list" class="event-list hidden"></div>
+        <div id="add-events-row" class="hidden">
+          <button class="primary-btn" onclick="addSelectedEvents()">Ausgewaehlte hinzufuegen</button>
+        </div>
+      </div>
+
+      <!-- Saved einsaetze -->
+      <div class="toolbar">
+        <button onclick="addManualEinsatz()">Manuell hinzufuegen</button>
+      </div>
+      <div class="table-wrap">
+        <table id="einsaetze-table">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Zeit</th>
+              <th>Event</th>
+              <th>Musikteam</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="einsaetze-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TEAMLEITER ── -->
+  <div id="tab-teamleiter" class="tab-panel hidden">
+    <div class="panel">
+      <div class="toolbar">
+        <button class="primary-btn" id="load-facts-btn" onclick="loadFactsForTeamleiter()">Fakten aus CT laden</button>
+        <span id="facts-status" class="status-msg"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="teamleiter-table">
+          <thead>
+            <tr><th>Team</th><th>Fakt</th><th>Wert</th></tr>
+          </thead>
+          <tbody id="teamleiter-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RUN ── -->
+  <div id="tab-run" class="tab-panel hidden">
+    <div class="panel">
+      <button class="primary-btn run-btn" id="run-btn" onclick="runUpdate()">Jetzt ausfuehren</button>
+      <pre id="run-log" class="log-view"></pre>
+    </div>
+  </div>
+
+  <!-- ── PERSON PICKER MODAL ── -->
+  <div id="person-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Person auswaehlen</h3>
+      <input id="person-search" type="text" placeholder="Name eingeben..." oninput="filterPersons(this.value)" />
+      <ul id="person-list"></ul>
+      <div class="modal-actions">
+        <button onclick="clearPersonSelection()">Loeschen</button>
+        <button class="primary-btn" onclick="confirmPersonSelection()">OK</button>
+        <button onclick="closePersonModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SERVICE GROUP SELECTOR MODAL ── -->
+  <div id="sg-modal" class="modal-overlay hidden">
+    <div class="modal-box modal-box--wide">
+      <h3>Dienste aus ChurchTools laden</h3>
+      <p class="modal-desc">Waehle die Dienstgruppen aus, deren Dienste hinzugefuegt werden sollen:</p>
+      <div id="sg-list" class="sg-list"></div>
+      <div class="modal-actions">
+        <button class="primary-btn" onclick="confirmServiceGroups()">Hinzufuegen</button>
+        <button onclick="closeSGModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADD TEAM MODAL ── -->
+  <div id="add-team-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Teams hinzufuegen</h3>
+      <div class="form-row">
+        <label>Anzahl</label>
+        <input id="add-team-count" type="number" min="1" max="20" value="1" oninput="updateAddTeamInputs()" style="width:80px;padding:7px 10px;border:1px solid #d2d2d7;border-radius:6px;font-size:14px;" />
+      </div>
+      <div id="add-team-names" class="add-team-names"></div>
+      <div class="modal-actions">
+        <button class="primary-btn" onclick="confirmAddTeams()">Hinzufuegen</button>
+        <button onclick="closeAddTeamModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REMOVE TEAM MODAL ── -->
+  <div id="remove-team-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Team entfernen</h3>
+      <ul id="remove-team-list" class="remove-team-list"></ul>
+      <div class="modal-actions">
+        <button onclick="closeRemoveTeamModal()">Schliessen</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

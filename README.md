@@ -1,78 +1,88 @@
 # CT Musikteam
 
-Desktop-App zum Verwalten und Übertragen von Musikteam-Einsätzen in ChurchTools.
+Desktop-App zum Verwalten und Uebertragen von Musikteam-Einsaetzen in ChurchTools.
+
+## Fuer Endnutzer
+
+Nach dem ersten Build liegt im Ordner `release/` alles, was du brauchst:
+
+```text
+release/
+├── CT Musikteam.app   ← Doppelklick zum Starten
+└── Updater.command    ← Doppelklick zum Aktualisieren (bei neuem Release)
+```
+
+**Erstmalige Einrichtung:**
+
+1. `./build.sh` ausfuehren (einmalig, braucht Go + Wails – siehe unten)
+2. `CT Musikteam.app` aus dem `release/`-Ordner starten
+3. In der App: Tab **Einstellungen** → ChurchTools-URL + Login-Token eintragen → Speichern
+
+**Update auf neue Version:**
+
+1. Neuen Release-Ordner herunterladen
+2. `release/Updater.command` doppelklicken
+3. Alte Daten werden geloescht, die App wird neu gebaut
+4. Danach: `release/CT Musikteam.app` starten
+
+---
 
 ## Was macht die App?
 
-- **Musikteam-Tabelle**: Teams (Spalten) und Dienste/Personen (Zeilen) direkt in der App pflegen – kein Kopieren mehr nötig
-- **Einsätze-Tabelle**: Zuordnung Datum → Musikteam verwalten
+- **Musikteam-Tabelle**: Teams (Spalten) und Dienste/Personen (Zeilen) direkt in der App pflegen
+- **Einsaetze-Tabelle**: Zuordnung Datum → Musikteam verwalten
 - **Teamleiter-Texte**: Pro Team den Anzeigetext pflegen
-- **Ausführen**: Überträgt alle Zuordnungen automatisch per ChurchTools-API
+- **Ausfuehren**: Uebertraegt alle Zuordnungen automatisch per ChurchTools-API
 
-Alle Daten werden lokal gespeichert (`~/.ct_musikteam/data.json`). Der API-Schlüssel wird sicher im Betriebssystem-Schlüsselbund (macOS Keychain / Windows Credential Manager) abgelegt.
+Alle Daten werden lokal gespeichert (`~/.ct_musikteam/data.json`).
+Der API-Schluessel wird sicher im Betriebssystem-Schlusselbund (macOS Keychain / Windows Credential Manager) abgelegt.
 
-## Voraussetzungen
+## Voraussetzungen (fuer Entwickler / Build)
 
-- Python 3.11 oder neuer
+- [Go 1.22+](https://go.dev/dl/)
+- [Wails v2](https://wails.io) (wird beim ersten Build automatisch installiert)
 - macOS oder Windows
 
-## Installation
-
 ```bash
-# Abhängigkeiten installieren
-python3 -m venv .venv
-source .venv/bin/activate        # macOS
-# .venv\Scripts\activate         # Windows
-
-pip install -r requirements.txt
+./build.sh
 ```
 
-## Starten
+Beim ersten Aufruf laedt `build.sh` automatisch alle Abhaengigkeiten und installiert
+die Wails CLI. Anschliessend liegt die fertige App unter `release/CT Musikteam.app`.
 
-```bash
-python main.py
-```
+## Einmalige App-Einrichtung
 
-## Einmalige Einrichtung
-
-1. Tab **Einstellungen**: API-Schlüssel und ChurchTools-URL eintragen → Speichern
-2. Tab **Musikteam**: Teams als Spalten anlegen, Dienst-IDs als Zeilen, Personen-IDs in die Zellen
-3. Tab **Einsätze**: Sonntage und zugehörige Musikteams eintragen
-4. Tab **Teamleiter**: Anzeigetexte pro Team prüfen/anpassen
-5. Tab **Ausführen**: „Jetzt ausführen" → Ergebnis im Log
+1. Tab **Einstellungen**: ChurchTools-URL und Login-Token eintragen → Speichern
+2. Tab **Musikteam**: Dienste aus CT laden, dann Personen pro Team zuordnen
+3. Tab **Einsaetze**: Sonntage und zugehoerige Musikteams eintragen
+4. Tab **Teamleiter**: Anzeigetexte pro Team pruefen/anpassen
+5. Tab **Ausfuehren**: „Jetzt ausfuehren" → Ergebnis im Log
 
 ## Verhalten bei mehreren Gottesdiensten an einem Sonntag
 
 | Anzahl Events | Bedingung | Ergebnis |
 |---|---|---|
-| 2 | Eines enthält „Jona" im Titel | Nur den normalen Gottesdienst bearbeiten |
-| 2 | Kein „Jona" | Überspringen + Hinweis |
-| 3+ | – | Immer überspringen + Hinweis |
+| 2 | Eines enthaelt „Jona" im Titel | Nur den normalen Gottesdienst bearbeiten |
+| 2 | Kein „Jona" | Ueberspringen + Hinweis |
+| 3+ | – | Immer ueberspringen + Hinweis |
 
-## Als Standalone-Executable bauen
+## Projektstruktur (fuer Entwickler)
 
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name "CT Musikteam" main.py
-```
-
-- **macOS**: `dist/CT Musikteam.app`
-- **Windows**: `dist/CT Musikteam.exe`
-
-> Falls Qt-Plugins fehlen: `--collect-all PyQt6` hinzufügen
-
-## Projektstruktur
-
-```
-ct_app/
-├── main.py               # Einstiegspunkt, Hauptfenster
-├── data_store.py         # JSON-Persistenz + Keychain-Integration
-├── ct_api.py             # ChurchTools REST API
-├── requirements.txt
-└── tabs/
-    ├── settings_tab.py   # Einstellungen (API-Key, URL)
-    ├── musikteam_tab.py  # Musikteam-Tabelle
-    ├── einsaetze_tab.py  # Einsatz-Zuordnungen
-    ├── teamleiter_tab.py # Teamleiter-Texte
-    └── run_tab.py        # Ausführen + Log
+```text
+ct_band_updater/
+├── release/             ← Endnutzer-Ordner (nach Build)
+│   ├── CT Musikteam.app    (gitignored, wird per build.sh erstellt)
+│   └── Updater.command     (doppelklick zum Aktualisieren)
+├── frontend/
+│   ├── index.html       # Alle 5 Tabs + Modals
+│   ├── style.css        # Styling
+│   └── app.js           # Frontend-Logik
+├── main.go              # Wails-Einstiegspunkt
+├── app.go               # Backend-Methoden (exposed to frontend)
+├── ctapi.go             # ChurchTools REST API + Run-Logik
+├── datastore.go         # JSON-Persistenz + Keychain-Integration
+├── buildinfo.go         # Build-ID (wird beim Build per ldflags gesetzt)
+├── wails.json           # Wails-Konfiguration
+├── go.mod / go.sum      # Go-Abhaengigkeiten
+└── build.sh             # Build-Skript
 ```

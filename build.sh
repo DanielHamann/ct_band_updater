@@ -1,35 +1,39 @@
 #!/usr/bin/env bash
-# Build a standalone executable with PyInstaller.
+# Build CT Musikteam with Go + Wails.
 set -e
 
-VENV_DIR=".venv"
+cd "$(dirname "$0")"
 
-if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
+# Check Go
+if ! command -v go &>/dev/null; then
+  echo "ERROR: Go is not installed. Install from https://go.dev/dl/"
+  exit 1
 fi
 
-source "$VENV_DIR/bin/activate"
+# Install Wails CLI if needed
+if ! command -v wails &>/dev/null; then
+  echo "Installing Wails CLI..."
+  go install github.com/wailsapp/wails/v2/cmd/wails@latest
+  export PATH="$PATH:$(go env GOPATH)/bin"
+fi
 
-echo "Installing dependencies..."
-pip install -r requirements.txt
-pip install pyinstaller
+# Download Go dependencies
+echo "Fetching dependencies..."
+go mod tidy
 
-echo "Writing build info..."
-python3 -c "
-from datetime import datetime
-ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-with open('build_info.py', 'w') as f:
-    f.write(f'BUILD_ID = \"{ts}\"\n')
-print(f'BUILD_ID = {ts}')
-"
+# Inject build timestamp
+BUILD_ID=$(date +%Y%m%d_%H%M%S)
+echo "BUILD_ID = $BUILD_ID"
 
-echo "Building main app..."
-pyinstaller --onefile --windowed --name "CT Musikteam" main.py
-
-echo "Building updater..."
-pyinstaller --onefile --windowed --name "Updater" updater.py
+# Build
+echo "Building..."
+wails build -ldflags "-X 'main.BuildID=${BUILD_ID}'"
 
 echo ""
-echo "Done. Output:"
-ls dist/
+echo "Kopiere App nach release/..."
+mkdir -p release
+rm -rf "release/CT Musikteam.app"
+cp -r "build/bin/CT Musikteam.app" "release/CT Musikteam.app"
+
+echo ""
+echo "Fertig. Die App liegt in: release/CT Musikteam.app"

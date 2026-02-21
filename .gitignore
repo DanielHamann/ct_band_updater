@@ -1,0 +1,10 @@
+# Build output
+build/bin/
+build/darwin/
+build/windows/
+
+# Release binaries (tracked: .command files; ignored: .app bundles)
+release/*.app
+
+# macOS
+.DS_Store
