@@ -36,7 +36,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ── Init ───────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
   await loadSettings();
-  await loadMusikteam();
+  await renderMusikteam();
   await loadEinsaetze();
   await loadTeamleiter();
 
@@ -64,10 +64,25 @@ async function loadSettings() {
   document.getElementById('api-key').value = s.apiKey || '';
   document.getElementById('store-key-cb').checked = s.storeAPIKey !== false;
   updateCtLink(s.ctURL);
+  updateUrlPrompt(s.ctURL);
   if (s.apiKey) showPrivacyWarning();
+  // First run: open settings automatically when no URL is configured
+  if (!(s.ctURL || '').trim()) {
+    document.getElementById('gear-btn').click();
+  }
 }
 
-document.getElementById('ct-url').addEventListener('input', e => updateCtLink(e.target.value));
+function updateUrlPrompt(url) {
+  const isEmpty = !(url || '').trim();
+  document.getElementById('url-welcome').classList.toggle('hidden', !isEmpty);
+  document.getElementById('ct-url').classList.toggle('needs-input', isEmpty);
+  document.getElementById('gear-btn').classList.toggle('needs-attention', isEmpty);
+}
+
+document.getElementById('ct-url').addEventListener('input', e => {
+  updateCtLink(e.target.value);
+  updateUrlPrompt(e.target.value);
+});
 document.getElementById('ct-url').addEventListener('blur', () => {
   const ctURL = document.getElementById('ct-url').value.trim();
   const apiKey = document.getElementById('api-key').value.trim();
@@ -125,7 +140,7 @@ async function loadMusikteam() {
   state.teams = data.teams || [];
   state.dienste = data.dienste || [];
   state.persons = await window.go.main.App.GetPersons();
-  updatePersonsBanner();
+  updateSetupGuide();
 }
 
 // Render without re-fetching from backend (use current state)
@@ -238,14 +253,19 @@ function resolvePersonName(id) {
   return p ? p.name : `ID: ${id}`;
 }
 
-function updatePersonsBanner() {
-  const banner = document.getElementById('persons-banner');
-  if (!banner) return;
-  if (state.persons.length === 0) {
-    banner.classList.remove('hidden');
-  } else {
-    banner.classList.add('hidden');
-  }
+function updateSetupGuide() {
+  const diensteDone = state.dienste.length > 0;
+  const teamsDone = state.teams.length > 0;
+  const personsDone = state.persons.length > 0;
+  const allDone = diensteDone && teamsDone && personsDone;
+
+  document.getElementById('setup-step-dienste').classList.toggle('done', diensteDone);
+  document.getElementById('setup-step-teams').classList.toggle('done', teamsDone);
+  document.getElementById('setup-step-persons').classList.toggle('done', personsDone);
+
+  document.getElementById('musikteam-setup').classList.toggle('hidden', allDone);
+  document.getElementById('musikteam-toolbar').classList.toggle('hidden', !allDone);
+
   updatePersonsStatus();
 }
 
@@ -285,6 +305,7 @@ async function confirmAddTeams() {
   });
   closeAddTeamModal();
   await saveMusikteam();
+  updateSetupGuide();
   renderMusikteamTable();
 }
 
@@ -319,6 +340,7 @@ function removeTeam() {
         state.teams = state.teams.filter(x => x !== t);
         state.dienste.forEach(d => { if (d.persons) delete d.persons[t]; });
         await saveMusikteam();
+        updateSetupGuide();
         renderMusikteamTable();
         removeTeam(); // refresh modal list
         if (state.teams.length === 0) closeRemoveTeamModal();
@@ -360,7 +382,7 @@ async function fetchPersons() {
   status.textContent = 'Lade Personen...';
   try {
     state.persons = await window.go.main.App.FetchPersons();
-    updatePersonsBanner();
+    updateSetupGuide();
     renderMusikteamTable();
   } catch (e) {
     status.textContent = 'Fehler: ' + e;
@@ -501,6 +523,7 @@ async function confirmServiceGroups() {
   closeSGModal();
   if (added === 0) { alert('Keine Dienste ausgewaehlt.'); return; }
   await saveMusikteam();
+  updateSetupGuide();
   renderMusikteamTable();
 }
 

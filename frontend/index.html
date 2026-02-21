@@ -10,16 +10,27 @@
 
   <!-- Tab bar -->
   <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="settings">Einstellungen</button>
-    <button class="tab-btn" data-tab="musikteam">Musikteam</button>
+    <button class="tab-btn active" data-tab="musikteam">Musikteam</button>
     <button class="tab-btn" data-tab="einsaetze">Einsaetze</button>
-    <button class="tab-btn" data-tab="teamleiter">Teamleiter</button>
+    <button class="tab-btn" data-tab="teamleiter">Fakten</button>
     <button class="tab-btn" data-tab="run">Ausfuehren</button>
+    <span class="tab-spacer"></span>
+    <button class="tab-btn gear-btn" data-tab="settings" id="gear-btn" title="Einstellungen">&#9881;</button>
   </nav>
 
   <!-- ── SETTINGS ── -->
-  <div id="tab-settings" class="tab-panel active">
+  <div id="tab-settings" class="tab-panel hidden">
     <div class="panel">
+
+      <!-- Welcome prompt — shown only when no URL is configured yet -->
+      <div id="url-welcome" class="url-welcome hidden">
+        <div class="url-welcome-icon">&#127968;</div>
+        <div class="url-welcome-text">
+          <strong>Willkommen bei CT Musikteam</strong>
+          <span>Gib zuerst die URL deiner ChurchTools-Instanz ein, um loszulegen.</span>
+        </div>
+      </div>
+
       <div class="info-box">
         <strong>Wie erhalte ich meinen Login-Token?</strong>
         <ol id="instructions-list">
@@ -72,22 +83,47 @@
   </div>
 
   <!-- ── MUSIKTEAM ── -->
-  <div id="tab-musikteam" class="tab-panel hidden">
+  <div id="tab-musikteam" class="tab-panel active">
     <div class="panel">
 
-      <!-- Personen banner — shown when no persons loaded -->
-      <div id="persons-banner" class="notice-box hidden">
-        <strong>Personen noch nicht geladen</strong><br>
-        Bevor du Personen zuordnen kannst, musst du sie einmalig aus ChurchTools laden.
-        Klicke auf <strong>"Personen laden"</strong> in der Toolbar unten.
+      <!-- Setup guide — shown while any step is pending -->
+      <div id="musikteam-setup" class="setup-guide">
+        <div class="setup-step" id="setup-step-dienste">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Dienste laden</strong>
+            <span>Lade die Dienstgruppen aus ChurchTools.</span>
+          </div>
+          <button class="primary-btn" onclick="loadDiensteFromCT()" id="load-dienste-btn">Laden</button>
+          <span class="step-done-mark">&#10003;</span>
+        </div>
+        <div class="setup-step" id="setup-step-teams">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Teams definieren</strong>
+            <span>Fuege deine Musikteams hinzu (z.B. A1, B1).</span>
+          </div>
+          <button class="primary-btn" onclick="addTeam()">Hinzufuegen</button>
+          <span class="step-done-mark">&#10003;</span>
+        </div>
+        <div class="setup-step" id="setup-step-persons">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Personen laden</strong>
+            <span>Lade die Mitglieder fuer die Dienst-Zuordnung.</span>
+          </div>
+          <button class="primary-btn" onclick="fetchPersons()" id="fetch-btn">Laden</button>
+          <span class="step-done-mark">&#10003;</span>
+        </div>
       </div>
 
-      <div class="toolbar">
+      <!-- Management toolbar — shown after setup is complete -->
+      <div class="toolbar hidden" id="musikteam-toolbar">
         <button onclick="addTeam()">Team hinzufuegen</button>
         <button onclick="removeTeam()">Team entfernen</button>
-        <button class="primary-btn" onclick="loadDiensteFromCT()" id="load-dienste-btn">Dienste aus CT laden</button>
+        <button onclick="loadDiensteFromCT()">Dienste hinzufuegen</button>
         <span class="spacer"></span>
-        <button class="primary-btn" onclick="fetchPersons()" id="fetch-btn">Personen laden</button>
+        <button onclick="fetchPersons()">Personen aktualisieren</button>
         <span id="persons-status" class="status-msg"></span>
       </div>
 

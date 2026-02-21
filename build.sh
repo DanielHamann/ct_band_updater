@@ -36,4 +36,23 @@ rm -rf "release/CT Musikteam.app"
 cp -r "build/bin/CT Musikteam.app" "release/CT Musikteam.app"
 
 echo ""
-echo "Fertig. Die App liegt in: release/CT Musikteam.app"
+echo "Erstelle DMG..."
+STAGING="release/.dmg_staging"
+rm -rf "$STAGING"
+mkdir -p "$STAGING"
+cp -r "release/CT Musikteam.app" "$STAGING/"
+ln -s /Applications "$STAGING/Applications"
+
+hdiutil create \
+  -volname "CT Musikteam" \
+  -srcfolder "$STAGING" \
+  -ov \
+  -format UDZO \
+  -o "release/CT Musikteam.dmg"
+
+rm -rf "$STAGING"
+
+echo ""
+echo "Fertig."
+echo "  App: release/CT Musikteam.app"
+echo "  DMG: release/CT Musikteam.dmg"
