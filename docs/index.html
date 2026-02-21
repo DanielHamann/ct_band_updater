@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CT Musikteam – ChurchTools Dienst-Assistent</title>
+  <meta name="description" content="CT Musikteam automatisiert die Dienstplanung in ChurchTools – für macOS und Windows." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #0071e3;
+      --blue-dark: #0062c4;
+      --green: #34c759;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: var(--text);
+      background: linear-gradient(160deg, #c8e4ff 0%, #ddd0ff 45%, #ffc8eb 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Glass card ── */
+    .card {
+      background: rgba(255,255,255,0.68);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      margin-bottom: 40px;
+      background: rgba(255,255,255,0.6);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.85);
+    }
+    .nav-brand { font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+    .nav-brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 56px 32px 48px;
+      margin-bottom: 32px;
+    }
+    .hero-icon {
+      width: 96px; height: 96px;
+      border-radius: 22px;
+      margin: 0 auto 24px;
+      display: block;
+      box-shadow: 0 8px 32px rgba(0,113,227,0.25);
+    }
+    .hero-icon-placeholder {
+      width: 96px; height: 96px;
+      border-radius: 22px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #0071e3, #0a84ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+      box-shadow: 0 8px 32px rgba(0,113,227,0.3);
+    }
+    .hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .hero .tagline { font-size: 18px; color: var(--muted); max-width: 520px; margin: 0 auto 12px; line-height: 1.5; }
+    .version-badge {
+      display: inline-block;
+      background: rgba(52,199,89,0.15);
+      color: #1a8a3a;
+      border: 1px solid rgba(52,199,89,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ── Download ── */
+    .download-section { padding: 36px 32px; margin-bottom: 28px; }
+    .download-section h2 { font-size: 22px; font-weight: 600; margin-bottom: 24px; text-align: center; }
+    .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .download-grid { grid-template-columns: 1fr; } }
+
+    .dl-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 24px 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.6);
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+    }
+    .dl-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,0.12); }
+    .dl-btn .dl-icon { font-size: 36px; line-height: 1; }
+    .dl-btn .dl-platform { font-size: 17px; font-weight: 600; }
+    .dl-btn .dl-sub { font-size: 12px; color: var(--muted); }
+    .dl-btn .dl-badge {
+      background: var(--blue);
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .dl-btn.windows .dl-badge { background: #0078d4; }
+    .dl-loading { text-align: center; color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+    .releases-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .releases-link a { color: var(--blue); text-decoration: none; }
+    .releases-link a:hover { text-decoration: underline; }
+
+    /* ── Features ── */
+    .features-section { padding: 36px 32px; margin-bottom: 28px; }
+    .features-section h2 { font-size: 22px; font-weight: 600; margin-bottom: 24px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .feature-item {
+      padding: 18px 20px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.45);
+      border: 1px solid rgba(255,255,255,0.55);
+    }
+    .feature-icon { font-size: 26px; margin-bottom: 8px; }
+    .feature-item h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .feature-item p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* ── Requirements ── */
+    .req-section { padding: 36px 32px; margin-bottom: 28px; }
+    .req-section h2 { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+    .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .req-grid { grid-template-columns: 1fr; } }
+    .req-card { padding: 18px 20px; border-radius: 12px; background: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.55); }
+    .req-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .req-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .req-card li { font-size: 13px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+    .req-card li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+    /* ── Releases ── */
+    .releases-section { padding: 36px 32px; margin-bottom: 28px; }
+    .releases-section h2 { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+    .release-item {
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.5);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .release-tag { font-size: 15px; font-weight: 700; color: var(--blue); min-width: 70px; }
+    .release-name { font-size: 14px; font-weight: 500; flex: 1; }
+    .release-date { font-size: 12px; color: var(--muted); }
+    .release-links { display: flex; gap: 8px; }
+    .release-links a { font-size: 12px; color: var(--blue); text-decoration: none; border: 1px solid rgba(0,113,227,0.3); border-radius: 6px; padding: 4px 10px; }
+    .release-links a:hover { background: rgba(0,113,227,0.06); }
+    .release-loading { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 0; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 24px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Nav -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <span>🎵</span>
+      CT Musikteam
+    </a>
+    <div class="nav-links">
+      <a href="#download">Download</a>
+      <a href="#features">Features</a>
+      <a href="#releases">Releases</a>
+      <a href="https://github.com/DanielHamann/ct_band_updater" target="_blank">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="card hero" id="top">
+    <div class="hero-icon-placeholder">🎶</div>
+    <h1>CT Musikteam</h1>
+    <p class="tagline">Dein ChurchTools-Assistent für die automatische Dienst-Zuweisung im Musikteam — für macOS und Windows.</p>
+    <span class="version-badge" id="hero-version">Lade Version...</span>
+  </div>
+
+  <!-- Download -->
+  <div class="card download-section" id="download">
+    <h2>Download</h2>
+    <div class="download-grid" id="download-grid">
+      <div class="dl-loading">Lade aktuelle Version…</div>
+    </div>
+    <p class="releases-link">
+      Alle Versionen und Changelogs auf
+      <a href="https://github.com/DanielHamann/ct_band_updater/releases" target="_blank">GitHub Releases →</a>
+    </p>
+  </div>
+
+  <!-- Features -->
+  <div class="card features-section" id="features">
+    <h2>Was kann CT Musikteam?</h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <h3>Automatische Zuweisung</h3>
+        <p>Trägt Musikteam-Mitglieder automatisch in die Dienstanfragen deiner ChurchTools-Instanz ein.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🗓️</div>
+        <h3>Einsatzplanung</h3>
+        <p>Events direkt aus ChurchTools laden, Team zuweisen, fertig. Mit lokaler Zeitzonenkorrektur.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">👥</div>
+        <h3>Teamverwaltung</h3>
+        <p>Mehrere Teams (z.B. A1, B1) mit je eigenen Personen-Zuordnungen pro Dienst.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔧</div>
+        <h3>Setup-Assistent</h3>
+        <p>Geführte Einrichtung in drei Schritten — auch ohne technisches Vorwissen.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📋</div>
+        <h3>Fakten-Verwaltung</h3>
+        <p>Teamleiter-Fakten aus ChurchTools laden und pro Team hinterlegen.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <h3>Sicherer Token-Speicher</h3>
+        <p>Login-Token wird verschlüsselt im Systemschlüsselbund gespeichert — niemals im Klartext.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requirements -->
+  <div class="card req-section">
+    <h2>Systemvoraussetzungen</h2>
+    <div class="req-grid">
+      <div class="req-card">
+        <h3>🍎 macOS</h3>
+        <ul>
+          <li>macOS 10.13 High Sierra oder neuer</li>
+          <li>Intel oder Apple Silicon (Universal Binary)</li>
+          <li>ChurchTools-Instanz mit Admin-Zugang</li>
+        </ul>
+      </div>
+      <div class="req-card">
+        <h3>🪟 Windows</h3>
+        <ul>
+          <li>Windows 10 oder Windows 11 (64-bit)</li>
+          <li>Edge WebView2 (ab Win10 vorinstalliert)</li>
+          <li>ChurchTools-Instanz mit Admin-Zugang</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Release History -->
+  <div class="card releases-section" id="releases">
+    <h2>Alle Versionen</h2>
+    <div id="releases-list">
+      <p class="release-loading">Lade Versionen…</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    CT Musikteam ist ein Open-Source-Projekt —
+    <a href="https://github.com/DanielHamann/ct_band_updater" target="_blank">Quellcode auf GitHub</a>.
+    Nicht offiziell mit ChurchTools verbunden.
+  </footer>
+
+</div>
+
+<script>
+  const REPO = 'DanielHamann/ct_band_updater';
+  const API  = `https://api.github.com/repos/${REPO}/releases`;
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function findAsset(assets, keyword) {
+    return assets.find(a => a.name.toLowerCase().includes(keyword));
+  }
+
+  async function loadReleases() {
+    let releases;
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error(res.status);
+      releases = await res.json();
+    } catch {
+      renderFallback();
+      return;
+    }
+
+    if (!releases.length) { renderFallback(); return; }
+
+    const latest = releases[0];
+
+    // ── Hero version badge ──
+    document.getElementById('hero-version').textContent = latest.tag_name;
+
+    // ── Download buttons ──
+    const macAsset = findAsset(latest.assets, 'macos') || findAsset(latest.assets, 'dmg');
+    const winAsset = findAsset(latest.assets, 'windows') || findAsset(latest.assets, 'zip') || findAsset(latest.assets, 'exe');
+
+    const grid = document.getElementById('download-grid');
+    grid.innerHTML = `
+      <a class="dl-btn mac" href="${macAsset ? macAsset.browser_download_url : `https://github.com/${REPO}/releases/latest`}" ${macAsset ? '' : 'target="_blank"'}>
+        <span class="dl-icon">🍎</span>
+        <span class="dl-platform">macOS</span>
+        <span class="dl-sub">Intel & Apple Silicon · .dmg</span>
+        <span class="dl-badge">${latest.tag_name} herunterladen</span>
+      </a>
+      <a class="dl-btn windows" href="${winAsset ? winAsset.browser_download_url : `https://github.com/${REPO}/releases/latest`}" ${winAsset ? '' : 'target="_blank"'}>
+        <span class="dl-icon">🪟</span>
+        <span class="dl-platform">Windows</span>
+        <span class="dl-sub">64-bit · .zip</span>
+        <span class="dl-badge" style="background:#0078d4">${latest.tag_name} herunterladen</span>
+      </a>
+    `;
+
+    // ── Release list ──
+    const list = document.getElementById('releases-list');
+    list.innerHTML = releases.map(r => {
+      const mac = findAsset(r.assets, 'macos') || findAsset(r.assets, 'dmg');
+      const win = findAsset(r.assets, 'windows') || findAsset(r.assets, 'zip') || findAsset(r.assets, 'exe');
+      const links = [
+        mac ? `<a href="${mac.browser_download_url}">🍎 macOS</a>` : '',
+        win ? `<a href="${win.browser_download_url}">🪟 Windows</a>` : '',
+        `<a href="${r.html_url}" target="_blank">Changelog</a>`,
+      ].filter(Boolean).join('');
+
+      return `
+        <div class="release-item">
+          <span class="release-tag">${r.tag_name}</span>
+          <span class="release-name">${r.name || r.tag_name}</span>
+          <span class="release-date">${formatDate(r.published_at)}</span>
+          <span class="release-links">${links}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function renderFallback() {
+    document.getElementById('hero-version').textContent = 'v1.0';
+    document.getElementById('download-grid').innerHTML = `
+      <a class="dl-btn mac" href="https://github.com/${REPO}/releases/latest" target="_blank">
+        <span class="dl-icon">🍎</span>
+        <span class="dl-platform">macOS</span>
+        <span class="dl-sub">Intel & Apple Silicon · .dmg</span>
+        <span class="dl-badge">Zum Download →</span>
+      </a>
+      <a class="dl-btn windows" href="https://github.com/${REPO}/releases/latest" target="_blank">
+        <span class="dl-icon">🪟</span>
+        <span class="dl-platform">Windows</span>
+        <span class="dl-sub">64-bit · .zip</span>
+        <span class="dl-badge" style="background:#0078d4">Zum Download →</span>
+      </a>`;
+    document.getElementById('releases-list').innerHTML =
+      `<p class="release-loading"><a href="https://github.com/${REPO}/releases" target="_blank">Alle Versionen auf GitHub ansehen →</a></p>`;
+  }
+
+  loadReleases();
+</script>
+</body>
+</html>

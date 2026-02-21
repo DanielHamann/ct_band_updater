@@ -1,0 +1,120 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  # ── macOS Universal Binary ──────────────────────────────────────────────
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build universal binary (Intel + Apple Silicon)
+        run: |
+          wails build \
+            -platform darwin/universal \
+            -ldflags "-X 'main.BuildID=${{ github.ref_name }}'"
+
+      - name: Create DMG
+        run: |
+          STAGING=$(mktemp -d)
+          cp -r "build/bin/CT Musikteam.app" "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+          hdiutil create \
+            -volname "CT Musikteam" \
+            -srcfolder "$STAGING" \
+            -ov -format UDZO \
+            -o "CT-Musikteam-${{ github.ref_name }}-macOS.dmg"
+          rm -rf "$STAGING"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: CT-Musikteam-${{ github.ref_name }}-macOS.dmg
+
+  # ── Windows 64-bit ──────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install GCC (required for CGO/Wails)
+        run: choco install mingw --yes --no-progress
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build
+        run: wails build -ldflags "-X 'main.BuildID=${{ github.ref_name }}'"
+        env:
+          CGO_ENABLED: 1
+
+      - name: Package as ZIP
+        shell: powershell
+        run: |
+          Compress-Archive `
+            -Path "build\bin\CT Musikteam.exe" `
+            -DestinationPath "CT-Musikteam-${{ github.ref_name }}-Windows.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: CT-Musikteam-${{ github.ref_name }}-Windows.zip
+
+  # ── Create GitHub Release ───────────────────────────────────────────────
+  release:
+    name: Publish Release
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-zip
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: CT Musikteam ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            ## CT Musikteam ${{ github.ref_name }}
+
+            | Plattform | Download |
+            |-----------|----------|
+            | 🍎 macOS (Universal — Intel & Apple Silicon) | `CT-Musikteam-${{ github.ref_name }}-macOS.dmg` |
+            | 🪟 Windows (64-bit) | `CT-Musikteam-${{ github.ref_name }}-Windows.zip` |
+
+            ### Systemvoraussetzungen
+            - **macOS** 10.13 oder neuer
+            - **Windows** 10 / 11 (64-bit) — Edge WebView2 ist vorinstalliert
+
+            ### Installation macOS
+            DMG öffnen → App in den Programme-Ordner ziehen → fertig.
+
+            ### Installation Windows
+            ZIP entpacken → `CT Musikteam.exe` starten → fertig.
+          files: |
+            CT-Musikteam-${{ github.ref_name }}-macOS.dmg
+            CT-Musikteam-${{ github.ref_name }}-Windows.zip

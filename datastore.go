@@ -84,7 +84,7 @@ type DataStore struct {
 func NewDataStore() *DataStore {
 	homeDir, _ := os.UserHomeDir()
 	dataDir := filepath.Join(homeDir, ".ct_musikteam")
-	os.MkdirAll(dataDir, 0755)
+	os.MkdirAll(dataDir, 0700)
 
 	ds := &DataStore{
 		path: filepath.Join(dataDir, "data.json"),
@@ -94,9 +94,14 @@ func NewDataStore() *DataStore {
 }
 
 func deepCopy(src AppData) AppData {
-	b, _ := json.Marshal(src)
+	b, err := json.Marshal(src)
+	if err != nil {
+		return src
+	}
 	var dst AppData
-	json.Unmarshal(b, &dst)
+	if err := json.Unmarshal(b, &dst); err != nil {
+		return src
+	}
 	return dst
 }
 
@@ -144,7 +149,7 @@ func (ds *DataStore) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(ds.path, b, 0644)
+	return os.WriteFile(ds.path, b, 0600)
 }
 
 // --- Settings ---
