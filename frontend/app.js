@@ -126,13 +126,9 @@ async function saveSettings() {
   const ctURL = document.getElementById('ct-url').value.trim();
   const apiKey = document.getElementById('api-key').value.trim();
   const storeKey = document.getElementById('store-key-cb').checked;
-  if (ctURL && !/^https?:\/\/.+/.test(ctURL)) {
-    showStatus('settings-status', 'URL muss mit http:// oder https:// beginnen.', true);
-    return;
-  }
   try {
     await window.go.main.App.SaveSettings(ctURL, apiKey, storeKey);
-    updateUrlPrompt(ctURL);
+    await loadSettings(); // ctURL may have been normalized (e.g. https:// added) — reflect that in the field
     document.querySelector('.tab-btn[data-tab="musikteam"]').click();
   } catch (e) {
     showStatus('settings-status', 'Fehler: ' + e, true);

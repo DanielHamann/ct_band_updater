@@ -60,19 +60,19 @@ func (a *App) SaveMusikteam(teams []string, dienste []Dienst) error {
 }
 
 func (a *App) FetchMasterData() (*CTMasterData, error) {
-	return fetchMasterData(a.store.GetCtURL(), a.store.GetAPIKey())
+	return NewCTClient(a.store.GetCtURL(), a.store.GetAPIKey()).FetchMasterData()
 }
 
 func (a *App) FetchFacts() ([]CTFactDefinition, error) {
-	return fetchFacts(a.store.GetCtURL(), a.store.GetAPIKey())
+	return NewCTClient(a.store.GetCtURL(), a.store.GetAPIKey()).FetchFacts()
 }
 
 func (a *App) FetchEventFacts(eventID int) ([]EventFactDisplay, error) {
-	return fetchEventFacts(a.store.GetCtURL(), a.store.GetAPIKey(), eventID)
+	return NewCTClient(a.store.GetCtURL(), a.store.GetAPIKey()).FetchEventFacts(eventID)
 }
 
 func (a *App) FetchEvents(from, to string) ([]CTEvent, error) {
-	return fetchEvents(a.store.GetCtURL(), a.store.GetAPIKey(), from, to)
+	return NewCTClient(a.store.GetCtURL(), a.store.GetAPIKey()).FetchEvents(from, to)
 }
 
 func (a *App) GetPersons() []Person {
@@ -80,7 +80,7 @@ func (a *App) GetPersons() []Person {
 }
 
 func (a *App) FetchPersons() ([]Person, error) {
-	persons, err := FetchPersonsFromAPI(a.store.GetCtURL(), a.store.GetAPIKey())
+	persons, err := NewCTClient(a.store.GetCtURL(), a.store.GetAPIKey()).FetchPersons()
 	if err != nil {
 		return nil, err
 	}
@@ -112,16 +112,23 @@ func (a *App) SetTeamleiter(tl map[string]TeamleiterEntry) error {
 
 func (a *App) RunUpdate() {
 	go func() {
+		logFn := func(msg string) { runtime.EventsEmit(a.ctx, "run:log", msg) }
+
+		apiKey := a.store.GetAPIKey()
+		if apiKey == "" {
+			logFn("FEHLER: Kein API-Schlüssel gesetzt (Einstellungen).")
+			runtime.EventsEmit(a.ctx, "run:done", RunResult{Errors: 1})
+			return
+		}
+
+		client := NewCTClient(a.store.GetCtURL(), apiKey)
 		result := runUpdateProcess(
-			a.store.GetCtURL(),
-			a.store.GetAPIKey(),
+			client,
 			a.store.GetEinsaetze(),
 			a.store.GetDienste(),
 			a.store.GetTeams(),
 			a.store.GetTeamleiter(),
-			func(msg string) {
-				runtime.EventsEmit(a.ctx, "run:log", msg)
-			},
+			logFn,
 		)
 		runtime.EventsEmit(a.ctx, "run:done", result)
 	}()

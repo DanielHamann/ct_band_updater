@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/zalando/go-keyring"
@@ -163,8 +164,12 @@ func (ds *DataStore) GetCtURL() string {
 func (ds *DataStore) SetCtURL(url string) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
+	url = strings.TrimSpace(url)
 	for len(url) > 0 && url[len(url)-1] == '/' {
 		url = url[:len(url)-1]
+	}
+	if url != "" && !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		url = "https://" + url
 	}
 	ds.data.Settings.CtURL = url
 	return ds.save()

@@ -16,6 +16,10 @@ import (
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 func doRequest(method, rawURL, apiKey, body string) ([]byte, error) {
+	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+		return nil, fmt.Errorf("Bitte zuerst die ChurchTools-URL in den Einstellungen speichern.")
+	}
+
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = strings.NewReader(body)
@@ -104,10 +108,35 @@ type CTMasterData struct {
 	Facts         []CTFact         `json:"facts"`
 }
 
+// ── Client ──────────────────────────────────────────────────────────────────
+
+// CTClient is the seam between business logic and the ChurchTools HTTP API.
+type CTClient interface {
+	FetchEvents(from, to string) ([]CTEvent, error)
+	FetchEvent(eventID int) (*CTEvent, error)
+	FetchEventFacts(eventID int) ([]EventFactDisplay, error)
+	AddServiceSlotsToEvent(eventID int, additions map[int]int) error
+	UpdateServiceRequest(eventID, requestID, personID int) error
+	UpdateEventFact(eventID, factID int, value string) error
+	FetchFacts() ([]CTFactDefinition, error)
+	FetchMasterData() (*CTMasterData, error)
+	FetchPersons() ([]Person, error)
+}
+
+// httpCTClient implements CTClient against a real ChurchTools instance.
+type httpCTClient struct {
+	ctURL  string
+	apiKey string
+}
+
+func NewCTClient(ctURL, apiKey string) *httpCTClient {
+	return &httpCTClient{ctURL: ctURL, apiKey: apiKey}
+}
+
 // ── Event facts ─────────────────────────────────────────────────────────────
 
-func fetchEventFacts(ctURL, apiKey string, eventID int) ([]EventFactDisplay, error) {
-	data, err := doRequest("GET", fmt.Sprintf("%s/api/events/%d/facts", ctURL, eventID), apiKey, "")
+func (c *httpCTClient) FetchEventFacts(eventID int) ([]EventFactDisplay, error) {
+	data, err := doRequest("GET", fmt.Sprintf("%s/api/events/%d/facts", c.ctURL, eventID), c.apiKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +164,7 @@ func fetchEventFacts(ctURL, apiKey string, eventID int) ([]EventFactDisplay, err
 
 // ── Events ──────────────────────────────────────────────────────────────────
 
-func fetchEvents(ctURL, apiKey, from, to string) ([]CTEvent, error) {
+func (c *httpCTClient) FetchEvents(from, to string) ([]CTEvent, error) {
 	q := url.Values{
 		"from":      {from},
 		"to":        {to},
@@ -143,15 +172,15 @@ func fetchEvents(ctURL, apiKey, from, to string) ([]CTEvent, error) {
 		"limit":     {"100"},
 		"include":   {"eventServices"},
 	}
-	data, err := doRequest("GET", ctURL+"/api/events?"+q.Encode(), apiKey, "")
+	data, err := doRequest("GET", c.ctURL+"/api/events?"+q.Encode(), c.apiKey, "")
 	if err != nil {
 		return nil, err
 	}
 	return decodeData[[]CTEvent](data)
 }
 
-func fetchEvent(ctURL, apiKey string, eventID int) (*CTEvent, error) {
-	data, err := doRequest("GET", fmt.Sprintf("%s/api/events/%d?include=eventServices", ctURL, eventID), apiKey, "")
+func (c *httpCTClient) FetchEvent(eventID int) (*CTEvent, error) {
+	data, err := doRequest("GET", fmt.Sprintf("%s/api/events/%d?include=eventServices", c.ctURL, eventID), c.apiKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +188,7 @@ func fetchEvent(ctURL, apiKey string, eventID int) (*CTEvent, error) {
 	return &ev, err
 }
 
-func addServiceSlotsToEvent(ctURL, apiKey string, eventID int, additions map[int]int) error {
+func (c *httpCTClient) AddServiceSlotsToEvent(eventID int, additions map[int]int) error {
 	type svcReq struct {
 		Count     int `json:"count"`
 		ServiceID int `json:"serviceId"`
@@ -169,26 +198,26 @@ func addServiceSlotsToEvent(ctURL, apiKey string, eventID int, additions map[int
 		services = append(services, svcReq{Count: count, ServiceID: sid})
 	}
 	body, _ := json.Marshal(map[string]any{"eventId": eventID, "services": services})
-	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/servicerequests", ctURL, eventID), apiKey, string(body))
+	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/servicerequests", c.ctURL, eventID), c.apiKey, string(body))
 	return err
 }
 
-func updateServiceRequest(ctURL, apiKey string, eventID, requestID, personID int) error {
+func (c *httpCTClient) UpdateServiceRequest(eventID, requestID, personID int) error {
 	body, _ := json.Marshal(map[string]any{"personId": personID, "isAccepted": false, "isValid": true})
-	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/servicerequests/%d", ctURL, eventID, requestID), apiKey, string(body))
+	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/servicerequests/%d", c.ctURL, eventID, requestID), c.apiKey, string(body))
 	return err
 }
 
-func updateEventFact(ctURL, apiKey string, eventID, factID int, value string) error {
+func (c *httpCTClient) UpdateEventFact(eventID, factID int, value string) error {
 	body, _ := json.Marshal(map[string]string{"value": value})
-	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/facts/%d", ctURL, eventID, factID), apiKey, string(body))
+	_, err := doRequest("PUT", fmt.Sprintf("%s/api/events/%d/facts/%d", c.ctURL, eventID, factID), c.apiKey, string(body))
 	return err
 }
 
 // ── Facts ───────────────────────────────────────────────────────────────────
 
-func fetchFacts(ctURL, apiKey string) ([]CTFactDefinition, error) {
-	data, err := doRequest("GET", ctURL+"/api/facts", apiKey, "")
+func (c *httpCTClient) FetchFacts() ([]CTFactDefinition, error) {
+	data, err := doRequest("GET", c.ctURL+"/api/facts", c.apiKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -202,8 +231,8 @@ func fetchFacts(ctURL, apiKey string) ([]CTFactDefinition, error) {
 
 // ── Masterdata ──────────────────────────────────────────────────────────────
 
-func fetchMasterData(ctURL, apiKey string) (*CTMasterData, error) {
-	data, err := doRequest("GET", ctURL+"/api/event/masterdata", apiKey, "")
+func (c *httpCTClient) FetchMasterData() (*CTMasterData, error) {
+	data, err := doRequest("GET", c.ctURL+"/api/event/masterdata", c.apiKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -218,11 +247,11 @@ func fetchMasterData(ctURL, apiKey string) (*CTMasterData, error) {
 
 // ── Persons ─────────────────────────────────────────────────────────────────
 
-func FetchPersonsFromAPI(ctURL, apiKey string) ([]Person, error) {
+func (c *httpCTClient) FetchPersons() ([]Person, error) {
 	var persons []Person
 	for page := 1; ; page++ {
 		q := url.Values{"limit": {"100"}, "page": {fmt.Sprint(page)}}
-		data, err := doRequest("GET", ctURL+"/api/persons?"+q.Encode(), apiKey, "")
+		data, err := doRequest("GET", c.ctURL+"/api/persons?"+q.Encode(), c.apiKey, "")
 		if err != nil {
 			return nil, err
 		}
@@ -289,8 +318,17 @@ type RunResult struct {
 	Errors  int `json:"errors"`
 }
 
+// ctRunClient is the subset of CTClient that runUpdateProcess needs.
+type ctRunClient interface {
+	FetchEvents(from, to string) ([]CTEvent, error)
+	FetchEvent(eventID int) (*CTEvent, error)
+	AddServiceSlotsToEvent(eventID int, additions map[int]int) error
+	UpdateServiceRequest(eventID, requestID, personID int) error
+	UpdateEventFact(eventID, factID int, value string) error
+}
+
 func runUpdateProcess(
-	ctURL, apiKey string,
+	client ctRunClient,
 	einsaetze []Einsatz,
 	dienste []Dienst,
 	teams []string,
@@ -299,11 +337,6 @@ func runUpdateProcess(
 ) RunResult {
 	var result RunResult
 
-	if apiKey == "" {
-		logFn("FEHLER: Kein API-Schlüssel gesetzt (Einstellungen).")
-		result.Errors++
-		return result
-	}
 	if len(einsaetze) == 0 {
 		logFn("FEHLER: Keine Einsätze definiert.")
 		result.Errors++
@@ -345,7 +378,7 @@ func runUpdateProcess(
 	}
 
 	logFn(fmt.Sprintf("Abrufe Events: %s bis %s...", fromDate, toDate))
-	events, err := fetchEvents(ctURL, apiKey, fromDate, toDate)
+	events, err := client.FetchEvents(fromDate, toDate)
 	if err != nil {
 		logFn("FEHLER beim Abrufen der Events: " + err.Error())
 		result.Errors++
@@ -377,7 +410,7 @@ func runUpdateProcess(
 			if value == "" {
 				value = teamName
 			}
-			if err := updateEventFact(ctURL, apiKey, ev.ID, tlEntry.FactID, value); err != nil {
+			if err := client.UpdateEventFact(ev.ID, tlEntry.FactID, value); err != nil {
 				logFn("  FEHLER Event-Fakt: " + err.Error())
 			} else {
 				logFn("  OK: Event-Fakt gesetzt: " + value)
@@ -399,10 +432,10 @@ func runUpdateProcess(
 		}
 		if len(additions) > 0 {
 			logFn(fmt.Sprintf("  Erstelle %d fehlende Dienst-Slot(s)...", totalMissing))
-			if err := addServiceSlotsToEvent(ctURL, apiKey, ev.ID, additions); err != nil {
+			if err := client.AddServiceSlotsToEvent(ev.ID, additions); err != nil {
 				logFn("  FEHLER: Dienst-Slots erstellen: " + err.Error())
 				result.Errors++
-			} else if updated, err := fetchEvent(ctURL, apiKey, ev.ID); err != nil {
+			} else if updated, err := client.FetchEvent(ev.ID); err != nil {
 				logFn("  FEHLER: Event neu laden: " + err.Error())
 				result.Errors++
 			} else {
@@ -423,7 +456,7 @@ func runUpdateProcess(
 				logFn(fmt.Sprintf("  ÜBERSPRUNGEN: %s (Instanz %d) – keine Person", svc.Name, idx+1))
 				continue
 			}
-			if err := updateServiceRequest(ctURL, apiKey, ev.ID, svc.ID, pids[idx]); err != nil {
+			if err := client.UpdateServiceRequest(ev.ID, svc.ID, pids[idx]); err != nil {
 				logFn(fmt.Sprintf("  FEHLER: %s: %s", svc.Name, err.Error()))
 				result.Errors++
 			} else {
